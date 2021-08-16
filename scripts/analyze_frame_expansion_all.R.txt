@@ -1,0 +1,340 @@
+require(dplyr)
+require(ggplot2)
+require(reshape2)
+require(stringr)
+require(datetime)
+
+ggplotRegression <- function (fit) {
+  ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+    geom_point() +
+    stat_smooth(method = "lm", col = "black", linetype=3, se = F) +
+    labs(subtitle = paste("R^2 =",signif(summary(fit)$adj.r.squared, 5),
+                       "\nIntercept =",signif(fit$coef[[1]],5 ),
+                       "\nSlope =",signif(fit$coef[[2]], 5)))+
+    theme_classic()
+}
+
+calc_z_comp <- function(t, tref, len, coeff) {
+  -1*(t-tref)*coeff*len*1000
+}
+
+datafiles <- list.files(pattern = ".csv")
+
+extract_meta_item <- function(item, meta) {
+  line_string = meta[which(str_detect(meta,paste0("^# ",item)))]
+  value = str_split(line_string, pattern = "=",simplify = T)[2]
+  return(value)
+}
+
+
+for(file in datafiles) {
+  
+  lines = readLines(con = file(file))
+  meta = lines[str_detect(lines, "#")]
+  
+  frame_z = as.numeric(extract_meta_item("frame_z_length",meta))/1000
+  user = extract_meta_item("id",meta)
+  dataset_id = extract_meta_item("timestamp",meta)
+  printer_id = extract_meta_item("printer",meta)
+  measure_meth = extract_meta_item("measure_type",meta)
+  step_dist = as.numeric(extract_meta_item("step_dist", meta))
+  hot_dur = as.numeric(extract_meta_item("hot_duration",meta))*60
+  cool_dur = as.numeric(extract_meta_item("cool_duration",meta))*60
+  frame_coeff = as.numeric(extract_meta_item("coeff", meta))*1E-6
+  
+  root = paste0(user,"/",dataset_id)
+  dir.create(root,recursive = TRUE)
+
+  data_raw = read.csv(file, comment.char = "#")
+  standard_columns = c(
+    "sample",
+    "time",
+    "mcu_pos_z",
+    "frame_t",
+    "bed_t",
+    "bed_target",
+    "he_t",
+    "he_target"
+  )
+  extra_columns <- colnames(data_raw)[!colnames(data_raw) %in% standard_columns]
+  
+  bed_off_idx <- which.max(data_raw$bed_target == 0)
+  data <- data_raw[c(standard_columns, extra_columns)] %>%
+    mutate("delta_z" = (mcu_pos_z - mcu_pos_z[1])*step_dist,
+           "time" = as.POSIXct(time, format="%Y/%m/%d-%H:%M:%S"),
+           "elapsed_time" = as.numeric(difftime(time,min(time),units = 'min',))
+           ) %>%
+    filter(delta_z < 2) %>%
+    select(-ends_with("target"))
+
+  data_mean_wide <- data %>%
+    select(-time) %>%
+    group_by(sample) %>%
+    summarise_all(.funs=list(mean)) 
+  
+  data_mean <- data_mean_wide %>%
+    melt(id.vars = "elapsed_time") %>%
+    mutate(variable=factor(variable,labels = c(
+      "Sample",
+      "MCU Position",
+      "Frame",
+      "Bed",
+      "Hotend",
+      extra_columns,
+      "Delta Endstop"
+    ))) %>%
+    rename(mean=value)
+  
+  
+  data_sd_wide = data %>%
+    select(-time) %>%
+    group_by(sample) %>%
+    summarise_all(.funs=list(sd))
+  data_sd <- data_sd_wide %>%
+    melt(id.vars = "elapsed_time") %>%
+    mutate(variable=factor(variable,labels = c(
+      "Sample",
+      "MCU Position",
+      "Frame",
+      "Bed",
+      "Hotend",
+      extra_columns,
+      "Delta Endstop"
+    )),
+    elapsed_time = data_mean$elapsed_time) %>%
+    rename(sd=value)
+  
+  data_all <- left_join(data_mean,data_sd, by = c("elapsed_time", "variable"))
+  
+  ##############################
+  
+  # Overview plot  
+  data_all_overview <- data_all
+  data_all_overview[data_all$variable == "Delta Endstop", "mean"] = data_all[data_all$variable=="Delta Endstop","mean"]*500
+  data_all_overview[data_all$variable == "Delta Endstop", "sd"] = data_all[data_all$variable=="Delta Endstop","sd"]*500
+  
+
+  ggplot(data=filter(data_all_overview, !variable %in%  c("Sample", "MCU Position")),
+         aes(elapsed_time, mean, colour=variable)) +
+    geom_hline(yintercept = 0, linetype=2) +
+    geom_line() +
+    geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), color="black", width=0) +
+    scale_y_continuous(sec.axis = sec_axis(~./500,name = expression(Delta*"Endstop Position [mm]"),
+                                           breaks = seq(-5,5,0.02)),
+                       breaks=seq(-400,400,10), labels = c(rep("",40),seq(0,400,10))) +
+    scale_x_continuous(breaks = seq(0,1000,15))+
+    scale_colour_brewer(type = "qual", palette = 6,direction = -1) +
+    labs(x = expression("Elapsed Time [min]"),
+         y = expression("Temperature ["*degree*"C]", colour="")) +
+         # title = "Frame Expansion Measurement", subtitle = file) +
+    theme_classic() +
+    theme(panel.grid.major = element_line(colour = gray(0.9)),
+          legend.position = "bottom",#c(0.8, 0.3),
+          legend.background = element_rect(colour = "black"),
+          legend.title = element_blank(),
+          # aspect.ratio = 1,
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))
+  ggsave(paste0(root,"/overview.png"),device = "png", width = 9, height = 5, 
+         units = "in", dpi=300)
+
+  ##############################
+  
+  # Overview plot, facetted
+  ggplot(data=filter(data_all, !variable %in% c("Sample", "Hotend","Bed", "MCU Position")),
+         aes(elapsed_time, mean, colour=variable)) +
+    # geom_hline(yintercept = 0, linetype=2) +
+    geom_line() +
+    geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), color="black", width=0) +
+    # scale_y_continuous(sec.axis = sec_axis(~./500,name = expression(Delta*"Endstop Position [mm]"),
+    #                                        breaks = seq(-5,5,0.025)),
+    #                    breaks=seq(-200,400,10), labels = c(rep("",20),seq(0,400,10))) +
+    # scale_x_continuous(breaks = seq(0,1000,30))+
+    scale_colour_brewer(type = "qual", palette = 6,direction = -1) +
+    labs(x = expression("Elapsed Time [min]"),
+         y = expression("Temperature ["*degree*"C]", colour=""),
+         title = "Frame Expansion Measurement", subtitle = file) +
+    theme_classic() +
+    theme(panel.grid.major = element_line(colour = gray(0.9)),
+          legend.position = "None",
+          legend.background = element_rect(colour = "black"),
+          legend.title = element_blank(),
+          aspect.ratio = 1,
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
+    facet_wrap(~variable, nrow = 1, scales = "free")
+  
+  ggsave(paste0(root,"/overview_facetted.png"),device = "png", width = 8, height = 5, 
+         units = "in", dpi=300)
+  
+  ##############################
+  
+  # Adjust delta Z for fitting
+  data_filtered <- data %>%
+    filter(20 < elapsed_time, 
+           elapsed_time < hot_dur-5)
+    # filter(frame_t < max(frame_t)-0.3)
+  fit_t_vs_z_poly = lm(frame_t~poly(data_filtered$delta_z,3), data_filtered[c("frame_t", "delta_z")])
+  fit_t_vs_z_lin = lm(frame_t~poly(data_filtered$delta_z,1), data_filtered[c("frame_t", "delta_z")])
+  data_fitted <- data_filtered %>%
+    mutate(t_fit_lin = fitted(fit_t_vs_z_lin),
+           t_fit_poly = fitted(fit_t_vs_z_poly),
+           t_fit_poly_resid = residuals(fit_t_vs_z_poly)
+           # t_fit_logis = fitted(fit_t_vs_z_logis)
+           )
+  
+  #png(paste0(root,"/residuals.png"))
+  #plot(fitted(fit_t_vs_z_poly), residuals(fit_t_vs_z_poly),
+  #     xlab = "Frame Temp",
+  #     ylab = "Residual",
+  #     main = "Polynomial (3) Fit")
+  #abline(h=0,lty="dashed")
+  #dev.off()
+  
+  
+  ggplot(data = data_fitted,
+         aes(x=delta_z, y=frame_t,fill=frame_t)) +
+    geom_line(aes(y=t_fit_poly, color='Fit(Poly)'), linetype=1, size=rel(1)) +
+    geom_line(aes(y=t_fit_lin, color='Fit(Linear)'), linetype=2, size=rel(1)) +
+    # geom_line(aes(y=t_fit_logis, color='Fit(Logis)'), linetype=3, size=rel(1.5)) +
+    geom_point(aes(color='Measured'),shape=21) +
+    labs(x=expression(Delta*" Endstop Position [mm]"),
+         y=expression("Frame Temperature "*"["*degree*C*"]"),
+         colour="Data Type",
+         fill="Frame Temperature",
+         title = "Expansion Fitting", subtitle = file)+
+    scale_colour_brewer(type = "qual", palette = 6,direction = 1) +
+    scale_fill_gradient2(low="red", mid = "yellow",
+                          midpoint = min(data_fitted$frame_t) + (max(data_fitted$frame_t)-min(data_fitted$frame_t))/2, 
+                          high="blue") +
+    theme_classic() +
+    theme(panel.grid.major = element_line(colour = gray(0.9)),
+          legend.position = c(0.8, 0.8),
+          legend.background = element_rect(colour = "black"),
+          # legend.title = element_blank(),
+          aspect.ratio = 1,
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))
+  #ggsave(paste0(root,"/curve_fitting.png"),device = "png", width = 6, height = 6, 
+  #       units = "in", dpi=300)
+
+  ##############################################################################
+  
+  # plot(data_filtered$frame_t, data_filtered$delta_z,xlab = "Frame Temperature [degC]",ylab = "Endstop Drift [mm]")
+  # lines(fitted(fit_t_vs_z_poly), data_filtered$delta_z, col="blue", lw=3)
+  # lines(fitted(fit_t_vs_z_lin), data_filtered$delta_z, col="Red", lw=1,lty=2)
+  # legend("topright",c("Poly(3)", "Linear"), col=c("blue","red"), lty=c(1,2), inset = c(0.1,0.1))
+
+  theoretical <- data.frame(frame_t = data_filtered$frame_t) %>%
+    mutate(comp_z = calc_z_comp(frame_t, frame_t[1], frame_z, frame_coeff),
+           delta_z = data_filtered$delta_z,
+           deviation = comp_z-delta_z,
+           elapsed_time = data_filtered$elapsed_time)
+
+  ggplot(theoretical, aes(x=frame_t, y=deviation, colour=elapsed_time)) +
+    geom_point() +
+    geom_hline(yintercept = 0, linetype=2) +
+    scale_color_gradient2(low="red", mid = "yellow",
+                          midpoint = max(theoretical$elapsed_time/2), 
+                          high="blue") +
+    labs(x=expression("Frame Temperature "*"["*degree*C*"]"),
+         y="Compensation Error (Theoretical-Measured) [mm]",
+         color="Elapsed Time [min]") +
+    theme_classic() +
+    theme(panel.grid.major = element_line(colour=grey(0.5,0.2)),
+          legend.position = "bottom",)
+  #ggsave(paste0(root,"/comp_error.png"),device = "png", width = 6, height = 5, 
+  #       units = "in", dpi=300)
+
+  ##############################################################################
+  
+  fit = lm(theoretical$delta_z~theoretical$comp_z)
+  fit_poly = lm(theoretical$delta_z~poly(theoretical$comp_z,3))
+  
+  ggplotRegression(fit) +
+    geom_point(data=theoretical, aes(x=comp_z, y=delta_z, colour=frame_t)) +
+    # scale_color_gradient(low = "black", high = "red",guide = "colourbar") +
+    scale_color_gradient2(low="blue", mid = "yellow", 
+                          midpoint = min(theoretical$frame_t) + (max(theoretical$frame_t)-min(theoretical$frame_t))/2, 
+                          high="red") +
+    geom_abline(slope=1, intercept = 0, linetype=2, colour=gray(0.5)) +
+    # geom_point(aes(x=fitted(fit_poly)))+
+    # coord_equal() +
+    # scale_x_continuous(breaks=seq(-2,2,0.02))+
+    # scale_y_continuous(breaks=seq(-2,2,0.02))+
+    labs(x="Z Frame Comp Correction [mm]\ngantry_factor=1; 6005A-T5 Alu Alloy",
+         y="Measured Endstop Drift [mm]",
+         color = expression("Frame Temperature "*"["*degree*C*"]"),
+         title = "Measured v. Theoretical") +
+    theme(panel.grid.major = element_line(colour=grey(0.5,0.2)),
+          legend.position = "bottom",
+          plot.title = element_text(hjust = 0),)
+  
+  ggsave(paste0(root,"/measured_v_comp.png"),device = "png", 
+         width = 6,
+         height = 6, 
+         units = "in", 
+         dpi=300)
+
+  ##############################################################################
+  
+  # overview with theoretical corrected Z height
+  
+  home_time <- 30
+  idx_home_ref <- which.max(data_mean_wide$elapsed_time > home_time)
+  
+  data_all_wide <- left_join(data_mean_wide, data_sd_wide, by="sample",suffix = c("_mean", "_sd")) %>%
+    mutate(
+      delta_z_mean_homed = delta_z_mean-delta_z_mean[idx_home_ref],
+      z_corr_theoretical = delta_z_mean_homed - calc_z_comp(frame_t_mean, 
+                                                      frame_t_mean[idx_home_ref],
+                                                      frame_z, 
+                                                      frame_coeff),
+      z_corr_meas_adjust = delta_z_mean_homed - calc_z_comp(frame_t_mean, 
+                                                            frame_t_mean[idx_home_ref],
+                                                            frame_z, 
+                                                            frame_coeff)*fit$coefficients[2]
+    ) %>%
+    filter(elapsed_time_mean < hot_dur)
+
+  ggplot(data=filter(data_all_wide, elapsed_time_mean >= home_time-10),
+         aes(elapsed_time_mean, alpha=(elapsed_time_mean >= home_time))) +
+    geom_hline(yintercept = 0, linetype=2) +
+    geom_line(aes(y=z_corr_meas_adjust, color=paste0("Fit-Adjusted Compensation\ngantry_factor=", round(fit$coefficients[2],2)))) +
+    geom_line(aes(y=z_corr_theoretical, color="Frame Expansion\nCompensation")) +
+    geom_line(aes(y=delta_z_mean_homed, color="Uncorrected")) +
+    geom_vline(xintercept = home_time, linetype=2) +
+    geom_errorbar(aes(ymin=z_corr_meas_adjust-delta_z_sd, 
+                      ymax=z_corr_meas_adjust+delta_z_sd), 
+                  color="black", width=0) +
+    geom_errorbar(aes(ymin=delta_z_mean_homed-delta_z_sd, 
+                      ymax=delta_z_mean_homed+delta_z_sd), 
+                  color="black", width=0) +
+    geom_errorbar(aes(ymin=z_corr_theoretical-delta_z_sd, 
+                      ymax=z_corr_theoretical+delta_z_sd), 
+                  color="black", width=0) +
+    geom_label(aes(x=home_time, y=0.05, label="<-Print Start"),
+               hjust=0, nudge_x = 5,) +
+    scale_y_continuous(breaks=seq(-5,5,0.01)) +
+    scale_x_continuous(limits = c(home_time-10, 
+                                  max(data_all_wide$elapsed_time_mean)),
+                       breaks = seq(0,1000,15))+
+    scale_colour_brewer(type = "qual", palette = 6,direction = -1) +
+    scale_alpha_discrete(guide=FALSE) +
+    labs(x = expression("Elapsed Time [min]"),
+         y = expression(Delta*"Endstop Position [mm]", colour=""),
+         title = "Theoretical Correction",
+         subtitle = paste0(user,"(",dataset_id,")",'\n',printer_id,"(",measure_meth,")")) +
+    # title = "Frame Expansion Measurement", subtitle = file) +
+    theme_classic() +
+    theme(panel.grid.major = element_line(colour = gray(0.9)),
+          legend.position = "bottom",
+          legend.background = element_rect(colour = "black"),
+          legend.title = element_blank(),
+          aspect.ratio = 1,
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5))
+  
+  ggsave(paste0(root,"/z_corrected_timeseries.png"),device = "png", width = 6, height = 5, 
+         units = "in", dpi=300)
+}
