@@ -1,4 +1,4 @@
-# Voron V0.xxx Klipper Profile
+# Voron V0.696 Klipper Profile
 
 Software:
 - [Raspberry Pi OS Lite "Buster"](https://www.raspberrypi.org/software/operating-systems/#raspberry-pi-os-32-bit)
@@ -22,6 +22,7 @@ Mods/Deviations (W.R.T. Stock V0.1):
 - 0ndsk4's [Nevermore Micro V4](https://github.com/0ndsk4/VoronUsers/tree/0ndsk4/printer_mods/0ndsk4/Nevermore_Air_Filter)
 
 Updates:
+- Serialized!
 - Motion testing complete. Serial requested.
 - Inital config. Build in progress.
 
