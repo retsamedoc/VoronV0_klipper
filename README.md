@@ -5,9 +5,11 @@ Software:
 - [Klipper](https://github.com/KevinOConnor/klipper)
 - [Moonraker](https://github.com/Arksine/moonraker)
 - [Mainsail](https://github.com/meteyou/mainsail)
+- [Crowsnest](https://github.com/mainsail-crew/crowsnest)
+- [PrettyGCode](https://github.com/Kragrathea/pgcode)
 
 Hardware:
-- Raspberry Pi Zero W
+- Raspberry Pi 4B
 - BigTreeTech SKR mini E3 V2.0 Controller
 
 Mods/Deviations (W.R.T. Stock V0.1):
@@ -20,8 +22,10 @@ Mods/Deviations (W.R.T. Stock V0.1):
 - Thiagolocatelli's [V0 Utility Belt](https://github.com/thiagolocatelli/VoronUsers/tree/master/printer_mods/DoubleT/v0_utility_belt)
 - Timmit99's [V0 Ubilical](https://github.com/timmit99/Voron-Hardware/tree/V0-Umbilical/V0-Umbilical)
 - 0ndsk4's [Nevermore Micro V4](https://github.com/0ndsk4/VoronUsers/tree/0ndsk4/printer_mods/0ndsk4/Nevermore_Air_Filter)
+- Johannchung's [Raspberry Pi Camera Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/johanncc/Raspberry_Pi_Camera_Mount)
 
 Updates:
+- Added rear chamber webcam
 - Serialized!
 - Motion testing complete. Serial requested.
 - Inital config. Build in progress.
