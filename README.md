@@ -20,7 +20,7 @@ Mods/Deviations (W.R.T. Stock V0.1):
 - Andre's [Neopixel Front Bed Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/Andre/V0_Neopixel_Front_Bed_Mount)
 - Andre's [Mini AB ADXL345 Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/Andre/Mini_Afterburner_ADXL345_Mount)
 - Thiagolocatelli's [V0 Utility Belt](https://github.com/thiagolocatelli/VoronUsers/tree/master/printer_mods/DoubleT/v0_utility_belt)
-- Timmit99's [V0 Ubilical](https://github.com/timmit99/Voron-Hardware/tree/V0-Umbilical/V0-Umbilical)
+- Skuep's [V0 Umbilical Plus](https://github.com/skuep/V0-Umbilical-Plus) update to Timmit99's [V0 Ubilical](https://github.com/timmit99/Voron-Hardware/tree/V0-Umbilical/V0-Umbilical)
 - 0ndsk4's [Nevermore Micro V4](https://github.com/0ndsk4/VoronUsers/tree/0ndsk4/printer_mods/0ndsk4/Nevermore_Air_Filter)
 - Johannchung's [Raspberry Pi Camera Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/johanncc/Raspberry_Pi_Camera_Mount)
 
