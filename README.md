@@ -23,6 +23,9 @@ Mods/Deviations (W.R.T. Stock V0.1):
 - Skuep's [V0 Umbilical Plus](https://github.com/skuep/V0-Umbilical-Plus) update to Timmit99's [V0 Ubilical](https://github.com/timmit99/Voron-Hardware/tree/V0-Umbilical/V0-Umbilical)
 - 0ndsk4's [Nevermore Micro V4](https://github.com/0ndsk4/VoronUsers/tree/0ndsk4/printer_mods/0ndsk4/Nevermore_Air_Filter)
 - Johannchung's [Raspberry Pi Camera Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/johanncc/Raspberry_Pi_Camera_Mount)
+- nhchiu's  [Motor Frame Mod](https://github.com/nhchiu/VoronMods/tree/main/V0/Mini_afterburner_motor_frame)
+- Cipher94's [Folding Spool Holder](https://www.thingiverse.com/thing:4572395)
+- johanncc's [Voron 0.1 Pi Camera Mount](https://www.printables.com/model/146877-voron-0-voron-01-raspberry-pi-camera-mount)
 
 Updates:
 - Added rear chamber webcam
