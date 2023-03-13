@@ -11,21 +11,23 @@ Software:
 Hardware:
 - Raspberry Pi 4B
 - BigTreeTech SKR mini E3 V2.0 Controller
+- Mellow NF-Crazy Standard Flow Hotend (Mosquitto clone)
+- Bondtech LGX Lite
 
 Mods/Deviations (W.R.T. Stock V0.1):
-- Changed controller chamber fans to be controlled by each SKR (fans only operate when the drivers are active).
-- Cork insulation directly under hotbed to protect electronic chamber from direct/radiated heat.
-- Mathematical Potato's [V0.1 Belted Z Drive](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/MathematicalPotato/v0.1_belted_z_drive)
-- Ch4relsB's [Slim V0 Handles](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/Ch4rlesB/V0_Handles_Slim)
-- Andre's [Neopixel Front Bed Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/Andre/V0_Neopixel_Front_Bed_Mount)
-- Andre's [Mini AB ADXL345 Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/Andre/Mini_Afterburner_ADXL345_Mount)
+- ACM Panels
+- 5mm Foam/Foil insulation directly under hotbed to redirect radiated heat back to hotbed.
+- 40x40x10 Heatsinks added to A/B Motors (cutouts made in panels to allow natural convection cooling).
+- MasturMynd's [Pandora Gantry Mod](https://github.com/MasturMynd/Pandora)
+- Custom belted Z (also provides a center rear pi camera)
+  - based heavily on Mathematical Potato's [V0.1 Belted Z Drive](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/MathematicalPotato/v0.1_belted_z_drive)
+- Christoph Muller's [kirigami bed V3](https://github.com/christophmuellerorg/voron_0_kirigami_bed)
+  - Upgraded for V0.2 usage using some (unreleased) VOC-only mods
 - Thiagolocatelli's [V0 Utility Belt](https://github.com/thiagolocatelli/VoronUsers/tree/master/printer_mods/DoubleT/v0_utility_belt)
 - Skuep's [V0 Umbilical Plus](https://github.com/skuep/V0-Umbilical-Plus) update to Timmit99's [V0 Ubilical](https://github.com/timmit99/Voron-Hardware/tree/V0-Umbilical/V0-Umbilical)
 - 0ndsk4's [Nevermore Micro V4](https://github.com/0ndsk4/VoronUsers/tree/0ndsk4/printer_mods/0ndsk4/Nevermore_Air_Filter)
-- Johannchung's [Raspberry Pi Camera Mount](https://github.com/VoronDesign/VoronUsers/tree/master/printer_mods/johanncc/Raspberry_Pi_Camera_Mount)
-- nhchiu's  [Motor Frame Mod](https://github.com/nhchiu/VoronMods/tree/main/V0/Mini_afterburner_motor_frame)
-- Cipher94's [Folding Spool Holder](https://www.thingiverse.com/thing:4572395)
-- johanncc's [Voron 0.1 Pi Camera Mount](https://www.printables.com/model/146877-voron-0-voron-01-raspberry-pi-camera-mount)
+- bartlammers' [Disco/Daylight on a Matchstick](https://github.com/VoronDesign/Voron-Hardware/tree/master/Daylight)
+- Zruncho's [ZeroClick Bed Probe](https://github.com/zruncho3d/ZeroClick)
 
 Updates:
 - Added rear chamber webcam
