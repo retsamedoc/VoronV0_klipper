@@ -14,7 +14,7 @@ Hardware:
 - Mellow NF-Crazy Standard Flow Hotend (Mosquitto clone)
 - Bondtech LGX Lite
 
-Mods/Deviations (W.R.T. Stock V0.1):
+Mods/Deviations (versus a stock build):
 - ACM Panels
 - 5mm Foam/Foil insulation directly under hotbed to redirect radiated heat back to hotbed.
 - 40x40x10 Heatsinks added to A/B Motors (cutouts made in panels to allow natural convection cooling).
